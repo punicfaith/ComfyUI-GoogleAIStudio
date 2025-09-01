@@ -12,39 +12,40 @@ class GoogleGeminiPrompt:
         pass
 
     @classmethod
-    def _get_google_ai_models(cls, api_key_from_input=None):
-        if not genai:
-            print("Google Generative AI SDK is not available.")
-            return ["gemini-1.5-flash-latest"]
-        
-        if not api_key_from_input:
-            return ["gemini-1.5-flash-latest"] # Return a default if no key is provided
-
-        try:
-            genai.configure(api_key=api_key_from_input)
-            models = []
-            for m in genai.list_models():
-                if 'generateContent' in m.supported_generation_methods and "gemini" in m.name:
-                    models.append(m.name.replace("models/", ""))
-            cls._google_ai_models_cache = sorted(list(set(models)))
-            if not cls._google_ai_models_cache:
-                print("No suitable Gemini models found for Google AI provider with the provided API key.")
-                return ["gemini-1.5-flash-latest"]
-            else:
-                return cls._google_ai_models_cache
-        except Exception as e:
-            print(f"Error fetching Google AI models: {str(e)}")
-            return ["gemini-1.5-flash-latest"]
-
-    @classmethod
     def INPUT_TYPES(cls):
-        llm_models = cls._get_google_ai_models()
-        default_llm_model = "gemini-1.5-flash-latest"
-        if default_llm_model not in llm_models:
-            if len(llm_models) > 0:
-                default_llm_model = llm_models[0]
-            else:
-                llm_models = [default_llm_model] # Ensure at least default is present
+        llm_models = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-002",
+            "gemini-1.5-flash-8b",
+            "gemini-1.5-flash-8b-001",
+            "gemini-1.5-flash-8b-latest",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-1.5-pro-002",
+            "gemini-1.5-pro-latest",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-001",
+            "gemini-2.0-flash-exp",
+            "gemini-2.0-flash-exp-image-generation",
+            "gemini-2.0-flash-lite",
+            "gemini-2.0-flash-lite-001",
+            "gemini-2.0-flash-lite-preview",
+            "gemini-2.0-flash-lite-preview-02-05",
+            "gemini-2.0-flash-preview-image-generation",
+            "gemini-2.0-flash-thinking-exp",
+            "gemini-2.0-flash-thinking-exp-01-21",
+            "gemini-2.0-flash-thinking-exp-1219",
+            "gemini-2.0-pro-exp",
+            "gemini-2.0-pro-exp-02-05",
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-image-preview",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash-lite-preview-06-17",
+            "gemini-2.5-flash-preview-05-20",
+            "gemini-2.5-flash-preview-tts",
+            "gemini-2.5-pro",
+        ]
+        default_llm_model = "gemini-2.5-flash-lite"
 
         return {
             "required": {
