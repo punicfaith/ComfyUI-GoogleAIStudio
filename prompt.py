@@ -12,38 +12,44 @@ class GoogleGeminiPrompt:
         pass
 
     @classmethod
-    def _get_google_ai_models(cls, api_key):
+    def _get_google_ai_models(cls, api_key_from_input=None):
         if not genai:
             print("Google Generative AI SDK is not available.")
-            return []
-        if not api_key:
-            print("Google AI API key not provided.")
-            return []
+            return ["gemini-1.5-flash-latest"]
+        
+        if not api_key_from_input:
+            return ["gemini-1.5-flash-latest"] # Return a default if no key is provided
 
         try:
-            genai.configure(api_key=api_key)
+            genai.configure(api_key=api_key_from_input)
             models = []
             for m in genai.list_models():
                 if 'generateContent' in m.supported_generation_methods and "gemini" in m.name:
                     models.append(m.name.replace("models/", ""))
             cls._google_ai_models_cache = sorted(list(set(models)))
             if not cls._google_ai_models_cache:
-                print("No suitable Gemini models found for Google AI provider.")
+                print("No suitable Gemini models found for Google AI provider with the provided API key.")
+                return ["gemini-1.5-flash-latest"]
             else:
-                print(f"Available Google AI (Gemini) Models: {cls._google_ai_models_cache}")
-            return cls._google_ai_models_cache
+                return cls._google_ai_models_cache
         except Exception as e:
             print(f"Error fetching Google AI models: {str(e)}")
-            return []
+            return ["gemini-1.5-flash-latest"]
 
     @classmethod
     def INPUT_TYPES(cls):
+        llm_models = cls._get_google_ai_models()
         default_llm_model = "gemini-1.5-flash-latest"
+        if default_llm_model not in llm_models:
+            if len(llm_models) > 0:
+                default_llm_model = llm_models[0]
+            else:
+                llm_models = [default_llm_model] # Ensure at least default is present
 
         return {
             "required": {
                 "google_api_key": ("STRING", {"default": "", "multiline": False, "placeholder": "Your Google AI API Key"}),
-                "llm_model": ("STRING", {"default": default_llm_model, "multiline": False, "placeholder": "e.g., gemini-1.5-flash-latest"}),
+                "llm_model": (llm_models, {"default": default_llm_model}),
                 "system_prompt": ("STRING", {"default": "", "multiline": True, "placeholder": "Optional system prompt"}),
                 "user_prompt": ("STRING", {"default": "", "multiline": True, "placeholder": "Your main prompt or text"}),
             },
