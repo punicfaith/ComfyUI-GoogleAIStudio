@@ -120,8 +120,8 @@ class GoogleGeminiPrompt:
 
         except Exception as e:
             import traceback
-            print(f"Google AI API error: {str(e)}
-{traceback.format_exc()}")
+            print(f"""Google AI API error: {str(e)}
+{traceback.format_exc()}""")
             if "API key not valid" in str(e):
                 return ("Error: Google AI API key is not valid. Please check your configuration.",)
             if "404" in str(e) and "models" in str(e):
