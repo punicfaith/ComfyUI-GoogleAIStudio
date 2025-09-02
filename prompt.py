@@ -64,7 +64,7 @@ class GoogleGeminiPrompt:
     FUNCTION = "execute"
     CATEGORY = "Google AI"
 
-    def _convert_tensor_to_pil(self, seed, image_tensor: torch.Tensor):
+    def _convert_tensor_to_pil(self, image_tensor: torch.Tensor):
         if image_tensor is None:
             return None
 
@@ -76,7 +76,7 @@ class GoogleGeminiPrompt:
 
         return Image.fromarray(img_np)
 
-    def execute(self, google_api_key, llm_model, system_prompt, user_prompt, image=None):
+    def execute(self, seed, google_api_key, llm_model, system_prompt, user_prompt, image=None):
         if not genai:
             return ("Error: Google Generative AI SDK is not available. Please install it: pip install google-generativeai",)
         
