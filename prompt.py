@@ -49,6 +49,7 @@ class GoogleGeminiPrompt:
 
         return {
             "required": {
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "google_api_key": ("STRING", {"default": "", "multiline": False, "placeholder": "Your Google AI API Key"}),
                 "llm_model": (llm_models, {"default": default_llm_model}),
                 "system_prompt": ("STRING", {"default": "", "multiline": True, "placeholder": "Optional system prompt"}),
@@ -63,7 +64,7 @@ class GoogleGeminiPrompt:
     FUNCTION = "execute"
     CATEGORY = "Google AI"
 
-    def _convert_tensor_to_pil(self, image_tensor: torch.Tensor):
+    def _convert_tensor_to_pil(self, seed, image_tensor: torch.Tensor):
         if image_tensor is None:
             return None
 
