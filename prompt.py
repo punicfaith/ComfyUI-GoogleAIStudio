@@ -44,6 +44,7 @@ class GoogleGeminiPrompt:
             "gemini-2.5-flash-preview-05-20",
             "gemini-2.5-flash-preview-tts",
             "gemini-2.5-pro",
+            "gemini-3-pro-preview",
         ]
         default_llm_model = "gemini-2.5-flash-lite"
 
