@@ -74,7 +74,7 @@ class NanobananaNode:
         
         # Collect all reference images from the batch
         # images is (B, H, W, C) - batch of images
-        encoded_images = []
+        # encoded_images = []
         
         if images is not None:
             # Determine image limit based on model
@@ -84,7 +84,7 @@ class NanobananaNode:
                 image_limit = 5  # Max 5 images
             else:  # nano-banana-pro-preview
                 image_limit = None  # No limit
-            
+
             # Process images from the batch
             for idx, image_tensor in enumerate(images):
                 # Apply image limit if set
@@ -102,9 +102,10 @@ class NanobananaNode:
                         "data": b64_data
                     }
                 })
-                encoded_images.append(b64_data)
+
+                # encoded_images.append(b64_data)
         
-        has_references = len(encoded_images) > 0
+        # has_references = len(encoded_images) > 0
 
         output_images = []
 
@@ -114,11 +115,6 @@ class NanobananaNode:
                 response_modalities=['Text', 'Image'] 
             )
 
-            # Use the appropriate model for image generation
-            # if model == "nano-banana-pro-preview":
-            #     model_id = "gemini-2.0-flash-exp-image-generation"
-            # else:
-            #     model_id = target_model
             model_id = target_model
 
             response = client.models.generate_content(
