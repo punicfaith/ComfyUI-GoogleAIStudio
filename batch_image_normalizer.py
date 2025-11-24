@@ -207,17 +207,11 @@ Resize modes:
             max_h = max(img.shape[1] for img in images)
             max_w = max(img.shape[2] for img in images)
             
-            largest_dim = max(max_h, max_w)
+            largest_dim = min(resolution_value, max(max_h, max_w)) 
             
-            if largest_dim < resolution_value:
-                # Upscale to at least max_resolution
-                target_height = resolution_value
-                target_width = resolution_value
-            else:
-                # Use the largest dimension as square size
-                target_height = largest_dim
-                target_width = largest_dim
-        
+            target_height = largest_dim
+            target_width = largest_dim
+                
         # Process each image
         normalized_images = []
         for img in images:
