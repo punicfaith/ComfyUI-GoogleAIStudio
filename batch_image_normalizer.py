@@ -14,8 +14,8 @@ class BatchImageNormalizer:
         return {
             "required": {
                 "inputcount": ("INT", {"default": 2, "min": 2, "max": 1000, "step": 1}),
-                "resize_mode": (["max_resolution", "min_resolution", "first_image", "largest_image"], {"default": "largest_image"}),
-                "resolution_value": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 64}),
+                "resize_mode": (["max_resolution", "min_resolution", "first_image", "last_image", "largest_image"], {"default": "largest_image"}),
+                "resolution_value": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 8}),
                 "upscale_method": (["bilinear", "bicubic", "nearest", "area", "lanczos"], {"default": "bicubic"}),
                 "canvas_position": (["center", "top-left", "top-right", "bottom-left", "bottom-right"], {"default": "center"}),
                 "fill_color": (["black", "white", "gray", "edge_extend"], {"default": "black"}),
@@ -40,6 +40,7 @@ Resize modes:
 - min_resolution: Ensure minimum resolution
 - first_image: Match first image size
 - largest_image: Match largest image in batch
+- last_image: Match last image size
 """
     
     def get_fill_value(self, fill_color):
@@ -187,6 +188,9 @@ Resize modes:
         if resize_mode == "first_image":
             target_height = images[0].shape[1]
             target_width = images[0].shape[2]
+        elif resize_mode == "last_image":
+            target_height = images[-1].shape[1]
+            target_width = images[-1].shape[2]
         elif resize_mode == "largest_image":
             target_height = max(img.shape[1] for img in images)
             target_width = max(img.shape[2] for img in images)

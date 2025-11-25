@@ -83,6 +83,7 @@ Utility node for normalizing multiple images to the same size.
   - `max_resolution`: Square canvas limited to resolution_value
   - `min_resolution`: Ensure minimum resolution
   - `first_image`: Match first image size
+  - `last_image`: Match last image size
 - `resolution_value`: Resolution limit/target (INT)
 - `upscale_method`: Interpolation method (DROPDOWN)
   - `bilinear`, `bicubic`, `nearest`, `area`, `lanczos`
@@ -240,6 +241,7 @@ Google의 Gemini 이미지 생성 모델을 사용하는 이미지 생성 노드
   - `max_resolution`: resolution_value로 제한된 정사각형 캔버스
   - `min_resolution`: 최소 해상도 보장
   - `first_image`: 첫 번째 이미지 크기에 맞춤
+  - `last_image`: 마지막 이미지 크기에 맞춤
 - `resolution_value`: 해상도 제한/목표값 (INT)
 - `upscale_method`: 보간 방법 (DROPDOWN)
   - `bilinear`, `bicubic`, `nearest`, `area`, `lanczos`

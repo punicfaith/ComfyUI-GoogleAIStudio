@@ -29,7 +29,7 @@ class NanobananaNode:
             },
             "optional": {
                 "images": ("IMAGE",),
-                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.1}),
+                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01}),
             }
         }
 
