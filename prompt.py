@@ -77,15 +77,25 @@ class GoogleGeminiPrompt:
 
         effective_model_name = llm_model if llm_model.startswith("models/") else f"models/{llm_model}"
 
+        # Gemma models do not support developer instructions (system parameters)
+        # We prepend it to the user prompt if it's a Gemma model.
+        is_gemma = "gemma" in llm_model.lower()
+        
+        final_system_instruction = None if is_gemma else (system_prompt if system_prompt else None)
+        final_user_prompt = user_prompt
+        
+        if is_gemma and system_prompt:
+            final_user_prompt = f"System Instruction:\n{system_prompt}\n\nUser Prompt:\n{user_prompt}"
+
         prompt_parts = []
         if pil_image:
             prompt_parts.append(pil_image)
-        prompt_parts.append(user_prompt)
+        prompt_parts.append(final_user_prompt)
 
         try:
             model_instance = genai.GenerativeModel(
                 model_name=effective_model_name,
-                system_instruction=system_prompt if system_prompt else None
+                system_instruction=final_system_instruction
             )
 
             generation_config = genai.types.GenerationConfig(
