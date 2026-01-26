@@ -14,29 +14,6 @@ class GoogleGeminiPrompt:
     @classmethod
     def INPUT_TYPES(cls):
         llm_models = [
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-002",
-            "gemini-1.5-flash-8b",
-            "gemini-1.5-flash-8b-001",
-            "gemini-1.5-flash-8b-latest",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro",
-            "gemini-1.5-pro-002",
-            "gemini-1.5-pro-latest",
-            "gemini-2.0-flash",
-            "gemini-2.0-flash-001",
-            "gemini-2.0-flash-exp",
-            "gemini-2.0-flash-exp-image-generation",
-            "gemini-2.0-flash-lite",
-            "gemini-2.0-flash-lite-001",
-            "gemini-2.0-flash-lite-preview",
-            "gemini-2.0-flash-lite-preview-02-05",
-            "gemini-2.0-flash-preview-image-generation",
-            "gemini-2.0-flash-thinking-exp",
-            "gemini-2.0-flash-thinking-exp-01-21",
-            "gemini-2.0-flash-thinking-exp-1219",
-            "gemini-2.0-pro-exp",
-            "gemini-2.0-pro-exp-02-05",
             "gemini-2.5-flash",
             "gemini-2.5-flash-image-preview",
             "gemini-2.5-flash-lite",
@@ -45,8 +22,12 @@ class GoogleGeminiPrompt:
             "gemini-2.5-flash-preview-tts",
             "gemini-2.5-pro",
             "gemini-3-pro-preview",
+            "gemini-3-flash-preview",
+            "gemma-3-12b-it",
+            "gemma-3-27b-it",
+
         ]
-        default_llm_model = "gemini-2.5-flash-lite"
+        default_llm_model = "gemma-3-27b-it"
 
         return {
             "required": {
