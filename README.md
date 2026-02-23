@@ -5,7 +5,6 @@ Custom nodes for integrating Google AI (Gemini) models into ComfyUI workflows.
 ## Installation
 
 ```bash
-cd ComfyUI/custom_nodes/ComfyUI-GoogleAIStudio
 pip install google-generativeai google-genai
 ```
 
@@ -163,7 +162,6 @@ ComfyUI 워크플로우에 Google AI (Gemini) 모델을 통합하는 커스텀 �
 ## 설치
 
 ```bash
-cd ComfyUI/custom_nodes/ComfyUI-GoogleAIStudio
 pip install google-generativeai google-genai
 ```
 

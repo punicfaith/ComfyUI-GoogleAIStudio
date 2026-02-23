@@ -2,7 +2,11 @@ import torch
 import os
 import json
 from PIL import Image
-import google.generativeai as genai
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    genai = None
 import numpy as np
 
 class GoogleGeminiPrompt:
@@ -60,12 +64,12 @@ class GoogleGeminiPrompt:
 
     def execute(self, seed, google_api_key, llm_model, system_prompt, user_prompt, image=None):
         if not genai:
-            return ("Error: Google Generative AI SDK is not available. Please install it: pip install google-generativeai",)
+            return ("Error: Google GenAI SDK is not available. Please install it: pip install google-genai",)
         
         if not google_api_key:
             return ("Error: Google AI API key not provided.",)
 
-        genai.configure(api_key=google_api_key)
+        client = genai.Client(api_key=google_api_key)
 
         pil_image = None
         if image is not None:
@@ -93,23 +97,20 @@ class GoogleGeminiPrompt:
         prompt_parts.append(final_user_prompt)
 
         try:
-            model_instance = genai.GenerativeModel(
-                model_name=effective_model_name,
+            generation_config = types.GenerateContentConfig(
+                temperature=0.7,
                 system_instruction=final_system_instruction
             )
-
-            generation_config = genai.types.GenerationConfig(
-                temperature=0.7
-            )
             
-            response = model_instance.generate_content(
-                prompt_parts,
-                generation_config=generation_config
+            response = client.models.generate_content(
+                model=effective_model_name,
+                contents=prompt_parts,
+                config=generation_config
             )
 
-            if not response.parts:
-                if response.prompt_feedback and response.prompt_feedback.block_reason:
-                    block_message = response.prompt_feedback.block_reason_message or str(response.prompt_feedback.block_reason)
+            if not response.text:
+                if hasattr(response, 'prompt_feedback') and getattr(response.prompt_feedback, 'block_reason', None):
+                    block_message = getattr(response.prompt_feedback, 'block_reason_message', str(response.prompt_feedback.block_reason))
                     print(f"Google AI response blocked. Reason: {block_message}")
                     return (f"Google AI response blocked. Reason: {block_message}",)
 
