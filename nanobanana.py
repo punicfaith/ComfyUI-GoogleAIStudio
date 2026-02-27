@@ -63,11 +63,10 @@ class NanobananaNode:
 
         client = genai.Client(api_key=api_key)
         
-        # Model mapping: nanobanana -> gemini-2.0-flash-exp
-        # nano-banana-pro-preview -> gemini-2.0-flash-exp-image-generation
         target_model = model
-        # if model == "nanobanana":
-        #     target_model = "gemini-2.0-flash-exp"
+
+        if model == "nanobanana":
+            target_model = "gemini-3.1-flash-image-preview"
 
         # Prepare content parts
         parts = [{"text": prompt}]
