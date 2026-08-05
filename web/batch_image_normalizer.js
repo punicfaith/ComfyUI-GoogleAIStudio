@@ -8,6 +8,45 @@ import { ComfyWidgets } from "../../scripts/widgets.js";
 // import { api } from '../../../scripts/api.js'
 // import { ComfyWidgets } from "../../../scripts/widgets.js"
 
+// canvas_shape 가 square 면 height 위젯을 감춘다. 두 노드가 같은 위젯을 쓰므로
+// 여기 한 곳에 둔다 — 배치 입력 노드에는 "Update inputs" 만 없다.
+function bindCanvasShape(node) {
+    const shapeW = node.widgets?.find(w => w.name === "canvas_shape");
+    const heightW = node.widgets?.find(w => w.name === "resolution_height");
+    const widthW = node.widgets?.find(w => w.name === "resolution_value");
+    if (!shapeW || !heightW) return;
+    heightW._origType = heightW.type;
+    heightW._origComputeSize = heightW.computeSize;
+    const applyShape = () => {
+        const rect = shapeW.value === "rectangle";
+        heightW.type = rect ? heightW._origType : "hidden";
+        heightW.computeSize = rect ? heightW._origComputeSize : () => [0, -4];
+        if (widthW) widthW.label = rect ? "resolution_value (width)" : "resolution_value";
+        node.setDirtyCanvas(true, true);
+    };
+    const prev = shapeW.callback;
+    shapeW.callback = function (v) {
+        const out = prev?.apply(this, arguments);
+        applyShape();
+        return out;
+    };
+    // 저장된 워크플로를 열 때도 맞춰 준다 (위젯 값이 실린 뒤에)
+    setTimeout(applyShape, 0);
+}
+
+app.registerExtension({
+    name: "ComfyUI.GoogleAIStudio.BatchImageNormalizerBatch",
+    async beforeRegisterNodeDef(nodeType, nodeData) {
+        if (nodeData.name !== "BatchImageNormalizerBatch") return;
+        const onNodeCreated = nodeType.prototype.onNodeCreated;
+        nodeType.prototype.onNodeCreated = function () {
+            const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+            bindCanvasShape(this);
+            return r;
+        };
+    },
+});
+
 app.registerExtension({
     name: "ComfyUI.GoogleAIStudio.BatchImageNormalizer",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
@@ -52,33 +91,7 @@ app.registerExtension({
                     }
                 });
 
-                // canvas_shape: square 면 height 위젯을 감춘다. 두 값 중 하나가
-                // 안 쓰이는데 그대로 떠 있으면 "왜 안 먹지" 를 매번 하게 된다.
-                // 값 자체는 남겨 두므로(숨김만) rectangle 로 되돌리면 그대로 돌아온다.
-                const shapeW = this.widgets?.find(w => w.name === "canvas_shape");
-                const heightW = this.widgets?.find(w => w.name === "resolution_height");
-                const widthW = this.widgets?.find(w => w.name === "resolution_value");
-                if (shapeW && heightW) {
-                    heightW._origType = heightW.type;
-                    heightW._origComputeSize = heightW.computeSize;
-                    const applyShape = () => {
-                        const rect = shapeW.value === "rectangle";
-                        heightW.type = rect ? heightW._origType : "hidden";
-                        heightW.computeSize = rect
-                            ? heightW._origComputeSize
-                            : () => [0, -4];
-                        if (widthW) widthW.label = rect ? "resolution_value (width)" : "resolution_value";
-                        this.setDirtyCanvas(true, true);
-                    };
-                    const prev = shapeW.callback;
-                    shapeW.callback = function (v) {
-                        const out = prev?.apply(this, arguments);
-                        applyShape();
-                        return out;
-                    };
-                    // 저장된 워크플로를 열 때도 맞춰 준다 (위젯 값이 실린 뒤에)
-                    setTimeout(applyShape, 0);
-                }
+                bindCanvasShape(this);
 
                 return r;
             };

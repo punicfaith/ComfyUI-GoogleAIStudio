@@ -209,10 +209,21 @@ The image-derived modes take their aspect from the images themselves.
                 else:
                     images.append(img)
         
+        return self.normalize_list(images, resize_mode, resolution_value, upscale_method,
+                                   canvas_position, fill_color, canvas_shape, resolution_height)
+
+    def normalize_list(self, images, resize_mode, resolution_value, upscale_method,
+                       canvas_position, fill_color, canvas_shape="square",
+                       resolution_height=None):
+        """Normalize a flat list of single-image tensors ([1, H, W, C] each).
+
+        Split out of ``normalize`` so the batch-input variant can share it —
+        the only difference between the two nodes is how the list is collected.
+        """
         if len(images) == 0:
             # Return empty tensor
             return (torch.zeros((1, 512, 512, 3)),)
-        
+
         # Determine target dimensions based on resize_mode
         if resize_mode == "first_image":
             target_height = images[0].shape[1]
@@ -284,3 +295,65 @@ The image-derived modes take their aspect from the images themselves.
         
         return (output,)
 
+
+
+class BatchImageNormalizerBatch(BatchImageNormalizer):
+    """Same normalizer, fed by a single IMAGE batch instead of numbered slots.
+
+    ``BatchImageNormalizer`` grows one socket per image, which is right when the
+    images come from separate loaders. When they already arrive as one batch —
+    Get Video Components, a Load Image Batch, an upstream node that emits N
+    frames — wiring them one by one is busywork, and a batch whose frames differ
+    in size cannot even be carried on a single IMAGE link until it is normalized.
+    This node takes the batch whole.
+
+    ``extra_images`` is there for the common "batch + one more" case (e.g. append
+    a reference frame to a clip) without falling back to the numbered node.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        base = BatchImageNormalizer.INPUT_TYPES()
+        required = {k: v for k, v in base["required"].items()
+                    if k not in ("inputcount", "image_1")}
+        required["images"] = ("IMAGE", {"tooltip": "이미지 배치 하나를 통째로 (프레임 N장)"})
+        return {
+            "required": required,
+            "optional": {
+                "extra_images": ("IMAGE", {"tooltip": "뒤에 이어 붙일 배치 (선택)"}),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("normalized_images",)
+    FUNCTION = "normalize_batch"
+    CATEGORY = "Google AI/Utils"
+    DESCRIPTION = """
+Normalize one IMAGE batch to a single size — same modes as Batch Image
+Normalizer, but the images come in as a batch instead of numbered sockets.
+
+Resize modes:
+- max_resolution: Limit to max resolution, then expand canvas
+- min_resolution: Ensure minimum resolution
+- fixed_resolution: Use the values exactly (ignores the batch size)
+- first_image: Match first image size
+- largest_image: Match largest image in batch
+- last_image: Match last image size
+
+canvas_shape (resolution modes only):
+- square: one value (resolution_value) is used for both sides
+- rectangle: resolution_value = width, resolution_height = height
+"""
+
+    def normalize_batch(self, images, resize_mode, resolution_value, upscale_method,
+                        canvas_position, fill_color, canvas_shape="square",
+                        resolution_height=None, extra_images=None):
+        frames = []
+        for batch in (images, extra_images):
+            if batch is None:
+                continue
+            for j in range(batch.shape[0]):
+                frames.append(batch[j:j + 1])
+        return self.normalize_list(frames, resize_mode, resolution_value, upscale_method,
+                                   canvas_position, fill_color, canvas_shape,
+                                   resolution_height)
