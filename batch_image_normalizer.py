@@ -14,8 +14,30 @@ class BatchImageNormalizer:
         return {
             "required": {
                 "inputcount": ("INT", {"default": 2, "min": 2, "max": 1000, "step": 1}),
-                "resize_mode": (["max_resolution", "min_resolution", "first_image", "last_image", "largest_image"], {"default": "largest_image"}),
-                "resolution_value": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 8}),
+                # fixed_resolution added for the rectangle case: max/min_resolution
+                # both compare against the batch (never below / never above the
+                # largest image), so neither can produce an exact 1344x768-style
+                # canvas — which is the whole point of asking for a rectangle.
+                "resize_mode": (["max_resolution", "min_resolution", "fixed_resolution",
+                                 "first_image", "last_image", "largest_image"],
+                                {"default": "largest_image"}),
+                # Canvas shape for the resolution-driven modes. "square" keeps the
+                # old behaviour (one side, used for both axes); "rectangle" reads
+                # resolution_value as the width and resolution_height as the height.
+                # The image-derived modes (first/last/largest_image) already take
+                # their aspect from the images and ignore both values.
+                "canvas_shape": (["square", "rectangle"], {
+                    "default": "square",
+                    "tooltip": "square: resolution_value 한 값만 사용 / rectangle: width=resolution_value, height=resolution_height",
+                }),
+                "resolution_value": ("INT", {
+                    "default": 1024, "min": 64, "max": 8192, "step": 8,
+                    "tooltip": "square 면 한 변, rectangle 이면 width",
+                }),
+                "resolution_height": ("INT", {
+                    "default": 1024, "min": 64, "max": 8192, "step": 8,
+                    "tooltip": "rectangle 일 때만 쓰는 height (square 면 무시)",
+                }),
                 "upscale_method": (["bilinear", "bicubic", "nearest", "area", "lanczos"], {"default": "bicubic"}),
                 "canvas_position": (["center", "top-left", "top-right", "bottom-left", "bottom-right"], {"default": "center"}),
                 "fill_color": (["black", "white", "gray", "edge_extend"], {"default": "black"}),
@@ -38,9 +60,15 @@ Click 'Update inputs' to change the number of image inputs.
 Resize modes:
 - max_resolution: Limit to max resolution, then expand canvas
 - min_resolution: Ensure minimum resolution
+- fixed_resolution: Use the values exactly (ignores the batch size)
 - first_image: Match first image size
 - largest_image: Match largest image in batch
 - last_image: Match last image size
+
+canvas_shape (max_resolution / min_resolution only):
+- square: one value (resolution_value) is used for both sides
+- rectangle: resolution_value = width, resolution_height = height
+The image-derived modes take their aspect from the images themselves.
 """
     
     def get_fill_value(self, fill_color):
@@ -153,8 +181,9 @@ Resize modes:
         
         return canvas
     
-    def normalize(self, inputcount, resize_mode, resolution_value, upscale_method, 
-                  canvas_position, fill_color, image_1, **kwargs):
+    def normalize(self, inputcount, resize_mode, resolution_value, upscale_method,
+                  canvas_position, fill_color, image_1,
+                  canvas_shape="square", resolution_height=None, **kwargs):
         """
         Normalize all images to the same size based on the selected mode
         """
@@ -194,28 +223,39 @@ Resize modes:
         elif resize_mode == "largest_image":
             target_height = max(img.shape[1] for img in images)
             target_width = max(img.shape[2] for img in images)
-        elif resize_mode == "max_resolution":
-            # Limit to max_resolution and create square canvas
-            # First find the largest dimension
+        elif resize_mode in ("max_resolution", "min_resolution", "fixed_resolution"):
+            # Resolution-driven canvas. "square" keeps the historical behaviour:
+            # one number decides both sides, so the batch comes out square. In
+            # "rectangle" the two numbers drive the axes independently, and the
+            # comparison against the images is done per axis rather than against
+            # a single "largest dimension" — otherwise a wide target would still
+            # collapse to a square whenever a tall image is in the batch.
             max_h = max(img.shape[1] for img in images)
             max_w = max(img.shape[2] for img in images)
-            
-            # Determine the limiting dimension
-            largest_dim = max(max(max_h, max_w), resolution_value)
-            
-            target_height = largest_dim
-            target_width = largest_dim
-                
-        elif resize_mode == "min_resolution":
-            # Ensure all images are at least max_resolution
-            max_h = max(img.shape[1] for img in images)
-            max_w = max(img.shape[2] for img in images)
-            
-            largest_dim = min(resolution_value, max(max_h, max_w)) 
-            
-            target_height = largest_dim
-            target_width = largest_dim
-                
+            # Height falls back to width so an unset widget can't produce a
+            # zero-sized canvas (old workflows have no resolution_height).
+            want_w = int(resolution_value)
+            want_h = int(resolution_height) if (canvas_shape == "rectangle"
+                                                and resolution_height) else want_w
+
+            if resize_mode == "fixed_resolution":
+                # The values win outright — no comparison with the batch.
+                target_width = want_w
+                target_height = want_h if canvas_shape == "rectangle" else want_w
+            elif canvas_shape == "rectangle":
+                if resize_mode == "max_resolution":
+                    target_width = max(max_w, want_w)
+                    target_height = max(max_h, want_h)
+                else:
+                    target_width = min(want_w, max_w)
+                    target_height = min(want_h, max_h)
+            else:
+                if resize_mode == "max_resolution":
+                    side = max(max(max_h, max_w), want_w)
+                else:
+                    side = min(want_w, max(max_h, max_w))
+                target_width = target_height = side
+
         # Process each image
         normalized_images = []
         for img in images:
